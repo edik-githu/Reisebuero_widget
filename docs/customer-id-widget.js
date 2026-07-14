@@ -43,6 +43,14 @@
     methods: { addIdentities: "PATCH", removeIdentities: "PATCH" },
     // WxCC PATCH-Endpunkte erwarten diesen Media-Type (nicht application/json)
     patchContentType: "application/json-patch+json",
+
+    // Body-Form je Endpunkt (asymmetrisch!):
+    //  - add-identities: Objekt mit Alias-Typ  -> {"customerId":[...]}
+    //  - remove-identities: reines String-Array -> ["wert1","wert2"]
+    bodies: {
+      add: (vals) => ({ customerId: vals }),
+      remove: (vals) => vals,
+    },
   };
   // ======================================================================
 
@@ -154,11 +162,11 @@
       try {
         if (toRemove.length) {
           await this._api(CONFIG.paths.removeIdentities(ws, pid),
-            CONFIG.methods.removeIdentities, { customerId: toRemove }, CONFIG.patchContentType);
+            CONFIG.methods.removeIdentities, CONFIG.bodies.remove(toRemove), CONFIG.patchContentType);
         }
         if (toAdd.length) {
           await this._api(CONFIG.paths.addIdentities(ws, pid),
-            CONFIG.methods.addIdentities, { customerId: toAdd }, CONFIG.patchContentType);
+            CONFIG.methods.addIdentities, CONFIG.bodies.add(toAdd), CONFIG.patchContentType);
         }
         this._status("Gespeichert.", "ok");
         await this._load(); // Kontrolle
