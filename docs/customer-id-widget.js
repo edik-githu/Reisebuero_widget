@@ -41,6 +41,8 @@
         `/admin/v1/api/person/remove-identities/workspace-id/${ws}/person-id/${pid}`,
     },
     methods: { addIdentities: "PATCH", removeIdentities: "PATCH" },
+    // WxCC PATCH-Endpunkte erwarten diesen Media-Type (nicht application/json)
+    patchContentType: "application/json-patch+json",
   };
   // ======================================================================
 
@@ -90,13 +92,12 @@
       }
     }
 
-    async _api(path, method, body) {
+    async _api(path, method, body, contentType) {
+      const headers = { "Authorization": "Bearer " + this._p.bearerToken };
+      if (body) headers["Content-Type"] = contentType || "application/json";
       const res = await fetch(this._baseUrl() + path, {
         method: method,
-        headers: {
-          "Authorization": "Bearer " + this._p.bearerToken,
-          "Content-Type": "application/json",
-        },
+        headers: headers,
         body: body ? JSON.stringify(body) : undefined,
       });
       const text = await res.text();
@@ -153,11 +154,11 @@
       try {
         if (toRemove.length) {
           await this._api(CONFIG.paths.removeIdentities(ws, pid),
-            CONFIG.methods.removeIdentities, { customerId: toRemove });
+            CONFIG.methods.removeIdentities, { customerId: toRemove }, CONFIG.patchContentType);
         }
         if (toAdd.length) {
           await this._api(CONFIG.paths.addIdentities(ws, pid),
-            CONFIG.methods.addIdentities, { customerId: toAdd });
+            CONFIG.methods.addIdentities, { customerId: toAdd }, CONFIG.patchContentType);
         }
         this._status("Gespeichert.", "ok");
         await this._load(); // Kontrolle
